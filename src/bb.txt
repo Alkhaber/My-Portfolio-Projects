@@ -1,0 +1,217 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+
+public class Oblig5Hele {
+        
+    Monitor2 MonitorSyke;
+    Monitor2 MonitorHelthy;
+
+    static CountDownLatch LatchSyk;
+    static CountDownLatch LatchHelthy;
+    public static void main(String[] args)throws FileNotFoundException, InterruptedException {
+        ArrayList<Thread> listeTrader = new ArrayList<>();
+        ArrayList<Thread> listeTrader2 = new ArrayList<>();
+        ArrayList<Thread> listeTrader3 = new ArrayList<>();
+
+
+        Monitor2 MonitorSyke = new Monitor2();
+        Monitor2 MonitorHelthy = new Monitor2();
+
+        File fil1 = new File("metadata.csv");   
+        Scanner scc = new Scanner(fil1);
+
+        while (scc.hasNextLine()){
+            String filen = scc.nextLine();
+            String[] fileAndType = filen.split(",");
+            String filNavn = fileAndType[0];
+            Boolean TrueOrFalse = Boolean.parseBoolean(fileAndType[1]);
+            
+            if ( TrueOrFalse == true){
+            LeseTrad lese = new LeseTrad(filNavn, MonitorSyke);
+            Thread tradForSyke = new Thread(lese);
+            listeTrader.add(tradForSyke);
+            tradForSyke.start();
+            }
+
+            else{
+            LeseTrad lese = new LeseTrad(filNavn, MonitorHelthy);
+            Thread tradForHelthy = new Thread(lese);
+            listeTrader.add(tradForHelthy);
+            tradForHelthy.start();
+
+            }
+           
+        }
+        scc.close();
+        for (Thread trader : listeTrader){
+            try{
+                trader.join();
+            }catch(InterruptedException e){}
+        }
+        Thread[] tradForSyke = new Thread[8];
+        Thread[] tradForHelthy = new Thread[8];
+        int tradeTall =8;
+
+         LatchSyk = new CountDownLatch(MonitorSyke.registerMonitor2.HvorMangeHashMaps());
+         LatchHelthy = new CountDownLatch(MonitorHelthy.registerMonitor2.HvorMangeHashMaps());
+
+        for (int i=0; i<tradeTall; i++){
+            
+            FletteTrad RunSyk = new FletteTrad(LatchSyk, MonitorSyke);
+            Thread trad = new Thread(RunSyk);
+            listeTrader2.add(trad);
+            tradForSyke[i]= trad;
+            trad.start();            
+        }
+        
+        
+
+        ///////
+        for (int i=0; i<tradeTall; i++){
+            
+            FletteTrad RunHelthy = new FletteTrad(LatchHelthy, MonitorHelthy);
+            Thread trad = new Thread(RunHelthy);
+            listeTrader3.add(trad);
+            tradForHelthy[i]= trad;
+            trad.start();
+        }
+        
+
+        //System.out.println(MonitorSyke.registerMonitor2.ListOfHashMaps.get(0)+"\n");
+        //System.out.println(MonitorHelthy.registerMonitor2.ListOfHashMaps.get(0));
+   
+        for (String keyen:MonitorSyke.registerMonitor2.ListOfHashMaps.get(0).keySet()){
+            Subsekvens sykeVal= MonitorSyke.registerMonitor2.ListOfHashMaps.get(0).get(keyen);
+            if(MonitorHelthy.registerMonitor2.ListOfHashMaps.get(0).containsKey(keyen)){
+
+                Subsekvens HelthVal= MonitorHelthy.registerMonitor2.ListOfHashMaps.get(0).get(keyen);
+                int Diff = sykeVal.hentAntForekomster()-HelthVal.hentAntForekomster();
+                if( Diff>6){
+                    System.out.println(keyen+" kommer "+Diff);
+                }
+            }else{
+                if (sykeVal.hentAntForekomster() >4){
+                    System.out.println(keyen+" kommer "+sykeVal.hentAntForekomster());
+
+                }
+            }
+        } 
+    }
+
+}
+
+
+
+
+
+
+
+
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+
+public class Oblig5Hele {
+        
+    Monitor2 MonitorSyke;
+    Monitor2 MonitorHelthy;
+
+    static CountDownLatch LatchSyk;
+    static CountDownLatch LatchHelthy;
+    public static void main(String[] args)throws FileNotFoundException, InterruptedException {
+        ArrayList<Thread> listeTrader = new ArrayList<>();
+        Monitor2 MonitorSyke = new Monitor2();
+        Monitor2 MonitorHelthy = new Monitor2();
+        //files
+        File fil1 = new File("metadata.csv");   
+        Scanner scc = new Scanner(fil1);
+
+        //fil lesing
+        while (scc.hasNextLine()){
+            String filen = scc.nextLine();
+            String[] fileAndType = filen.split(",");
+            String filNavn = fileAndType[0];
+            Boolean TrueOrFalse = Boolean.parseBoolean(fileAndType[1]);
+            //lesetrad
+            if ( TrueOrFalse == true){
+            LeseTrad lese = new LeseTrad(filNavn, MonitorSyke);
+            Thread tradForSyke = new Thread(lese);
+            listeTrader.add(tradForSyke);
+            tradForSyke.start();
+            }
+
+            else{
+            LeseTrad lese = new LeseTrad(filNavn, MonitorHelthy);
+            Thread tradForHelthy = new Thread(lese);
+            listeTrader.add(tradForHelthy);
+            tradForHelthy.start();
+
+            }
+           
+        }
+        
+        for (Thread trader : listeTrader){
+            trader.join();
+        }
+            
+        Thread[] tradForSyke = new Thread[8];
+        Thread[] tradForHelthy = new Thread[8];
+        
+        int tradeTall =8;
+
+         LatchSyk = new CountDownLatch(MonitorSyke.hentSubsekvensRegisterMoni2().HvorMangeHashMaps());
+         LatchHelthy = new CountDownLatch(MonitorHelthy.hentSubsekvensRegisterMoni2().HvorMangeHashMaps());
+
+        for (int i=0; i<tradeTall; i++){
+            
+            FletteTrad RunSyk = new FletteTrad(LatchSyk, MonitorSyke);
+            Thread trad = new Thread(RunSyk);
+            
+            tradForSyke[i]= trad;
+            trad.start();            
+        }
+        
+        
+
+        ///////
+        System.out.println("dnf");
+        for (int i=0; i<tradeTall; i++){
+            
+            FletteTrad RunHelthy = new FletteTrad(LatchHelthy, MonitorHelthy);
+            Thread trad = new Thread(RunHelthy);
+            
+            tradForHelthy[i]= trad;
+            trad.start();
+        }
+        System.out.println("dnf2");
+        LatchSyk.await();
+        LatchHelthy.await();
+
+        System.out.println("dnf3");
+
+        for (Thread trader : tradForSyke){
+            trader.join();
+        }
+        
+        for (Thread trader : tradForHelthy){
+            trader.join();
+        }
+        System.out.println("dnf4");
+
+        System.out.println(MonitorSyke.hentSubsekvensRegisterMoni2()+"\n");
+        System.out.println(MonitorHelthy.hentSubsekvensRegisterMoni2());
+   
+        
+        System.out.println("dnf3");
+
+    }
+    
+
+}
+

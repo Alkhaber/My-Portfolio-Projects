@@ -1,0 +1,110 @@
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+
+public class Oblig5Hele {
+    static CountDownLatch LatchSyk;
+    static CountDownLatch LatchHelthy;
+    Monitor2 MonitorSyke;
+    Monitor2 MonitorHelthy;
+    public static void main(String[] args) throws Exception {
+        System.out.println("~~~~~~~~Aapner Filene~~~~~~~~");
+        ArrayList<Thread> listeTrader = new ArrayList<>();
+
+        
+        //ArrayList<Thread> tradeneFetteTrue =new ArrayList<Thread>(8); 
+        //ArrayList<Thread> tradeneFetteFalse =new ArrayList<Thread>(8); 
+
+
+
+        Monitor2 MonitorSyke = new Monitor2();
+        Monitor2 MonitorHelthy = new Monitor2();
+
+        File fil1 = new File("metadata.csv");
+        Scanner scc = new Scanner(fil1);
+
+        while (scc.hasNextLine()){
+            String filen = scc.nextLine();
+            String[] fileType = filen.split(",");
+            filen = fileType[0];
+            boolean TrueOrFalse = Boolean.parseBoolean(fileType[1]); 
+            if (TrueOrFalse){
+                LeseTrad lese = new LeseTrad(filen, MonitorSyke);
+                Thread tradForSyke = new Thread(lese);
+                listeTrader.add(tradForSyke);
+                tradForSyke.start();
+            } else{
+                LeseTrad lese = new LeseTrad(filen, MonitorHelthy);
+            Thread tradHelthy = new Thread(lese);
+            listeTrader.add(tradHelthy);
+            tradHelthy.start();
+            }
+        }
+        for (Thread trader : listeTrader){
+            trader.join();
+        }
+        
+        Thread[] tradForSyke= new Thread[8];
+        Thread[] tradForHelthy= new Thread[8];
+        int syk = MonitorSyke.hentSubsekvensRegisterMoni2().HvorMangeHashMaps()-1;
+        int Helthy= MonitorHelthy.hentSubsekvensRegisterMoni2().HvorMangeHashMaps()-1;
+        LatchSyk = new CountDownLatch(syk);
+        LatchHelthy = new CountDownLatch(Helthy);
+        
+    
+        for(int i = 0; i<8;i++){
+            FletteTrad RunSyk = new FletteTrad(LatchSyk,MonitorSyke);
+            Thread trad = new Thread(RunSyk);
+            tradForSyke[i]= trad;
+            trad.start();
+        }
+        
+        for(int i = 0; i<8;i++){
+            FletteTrad RunHelthy = new FletteTrad(LatchHelthy,MonitorHelthy);
+            Thread traden = new Thread(RunHelthy);
+            tradForHelthy[i]= traden;
+            traden.start();
+        }
+        System.out.println("here1");
+        LatchSyk.await();
+        LatchHelthy.await();
+        System.out.println("here2");
+        
+        for (Thread trader : tradForSyke){
+            trader.join();
+        }
+        
+        for (Thread trader : tradForHelthy){
+            trader.join();
+        }
+        
+        System.out.println("~~~~~~~~Analyserer Data~~~~~~~~");
+        analyserData(MonitorSyke.hentSubsekvensRegisterMoni2(), MonitorHelthy.hentSubsekvensRegisterMoni2());
+
+        scc.close();
+   
+    }
+    static void analyserData(SubsekvensRegister subTure,SubsekvensRegister subFalse){
+
+        HashMap<String,Subsekvens> hashTrue= subTure.hentinnHash();
+        HashMap<String,Subsekvens> hashFalse= subFalse.hentinnHash();
+
+        for (String key:hashTrue.keySet()){
+            Subsekvens vTrue= hashTrue.get(key);
+            if(hashFalse.containsKey(key)){
+                Subsekvens vFalse= hashFalse.get(key);
+                int forskjell = vTrue.hentAntForekomster()-vFalse.hentAntForekomster();
+                if(forskjell>6){
+                    System.out.println("Genen ("+key+") forkommer "+forskjell+" ganger mer i mennesker med viruset enn friske mennesker.");
+                }
+            }else{
+                if(vTrue.hentAntForekomster()>4){
+                    System.out.println("Genen ("+key+") forkommer "+vTrue.hentAntForekomster()+" ganger mer i mennesker med viruset enn friske mennesker.");
+
+                }
+            }
+        } 
+    }
+}
